@@ -57,6 +57,7 @@ class JoinRoomView(APIView):
         if not user_id:
             return Response({"error": "user_id required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # [msaad] I'd prefer one try block with multiple except clauses for each type
         try:
             user = User.objects.filter(pk=user_id).prefetch_related("memberships").first()
         except User.DoesNotExist:
@@ -96,6 +97,8 @@ class LeaveRoomView(APIView):
         if not deleted:
             return Response({"error": "Membership not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        # [msaad] This endpoint doesn't check if the room is now empty after the last person left, which could help us free phone numbers and reduce cost.
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -119,13 +122,20 @@ class RoomFeedView(APIView):
             return Response({"error": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
 
         from sms.models import ProcessedSMSEvent
+
+        # [msaad] Pagination should not be optional! 
         events = ProcessedSMSEvent.objects.filter(
             to_number=room.twilio_number
-        ).order_by("received_at")
+        ).order_by("received_at")  # [msaad] the table is already ordered by -received_at, if not properly indexed this would be awful performance wise.
 
         after = request.query_params.get("after")
         if after:
             events = events.filter(id__gt=after)
+        
+        # Fixing N+1 query that llm didn't care at all lol
+        numbers  = {e.from_number for e in events}
+        name_map = {u.phone_number: u.name
+                    for u in User.objects.filter(phone_number__in=numbers)}
 
         data = [
             {
@@ -135,7 +145,7 @@ class RoomFeedView(APIView):
                 "status":      e.status,
                 "received_at": e.received_at,
                 # Resolve sender name if we know the number
-                "sender_name": _resolve_name(e.from_number),
+                "sender_name": name_map.get(e.from_number, e.from_number),
             }
             for e in events
         ]
@@ -163,7 +173,9 @@ class RoomFeedView(APIView):
 
         # Write a ProcessedSMSEvent so the feed picks it up, just like a real inbound SMS would.
         # Use a synthetic sid so idempotency logic is satisfied.
-        import uuid
+
+        # [msaad] Look at these imports here!! wth
+        import uuid 
         from sms.models import ProcessedSMSEvent
         ProcessedSMSEvent.objects.create(
             message_sid  = f"WEB_{uuid.uuid4().hex}",
@@ -180,11 +192,3 @@ class RoomFeedView(APIView):
             print(f"[WARN] Broadcast failed (SMS may be unconfigured): {e}")
 
         return Response({"ok": True}, status=status.HTTP_201_CREATED)
-
-
-def _resolve_name(phone_number: str) -> str:
-    """Best-effort: look up user name by phone number for display."""
-    try:
-        return User.objects.get(phone_number=phone_number).name
-    except User.DoesNotExist:
-        return phone_number

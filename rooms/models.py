@@ -10,7 +10,7 @@ class Room(models.Model):
     def __str__(self):
         return self.name
 
-    @property
+    @property # [msaad] This will issue a query every time this model is serialized (should be an annotation with a fallback)
     def member_count(self):
         return self.memberships.count()
 
