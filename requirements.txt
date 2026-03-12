@@ -1,0 +1,8 @@
+Django>=4.2,<5.0
+djangorestframework>=3.15
+twilio>=8.0
+gunicorn>=21.2           # production WSGI server
+dj-database-url>=2.1    # parses Railway's DATABASE_URL
+psycopg2-binary>=2.9    # Postgres driver
+whitenoise>=6.6         # serves static files without a CDN
+python-dotenv>=1.0      # loads .env locally
