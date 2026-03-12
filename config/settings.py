@@ -14,12 +14,26 @@ INSTALLED_APPS = [
     "users",
     "rooms",
     "sms",
+    "frontend",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
+]
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",  # needed for {{ request.* }}
+            ],
+        },
+    },
 ]
 
 ROOT_URLCONF = "config.urls"

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GroupSMS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0d0d0d;
+    --surface:  #141414;
+    --border:   #2a2a2a;
+    --accent:   #00e5a0;
+    --accent2:  #0066ff;
+    --danger:   #ff3b3b;
+    --text:     #e8e8e8;
+    --muted:    #555;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: 48px 1fr;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 12px;
+    background: var(--surface);
+  }
+  .logo {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--muted); }
+  .pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: #1a2a1a;
+    color: var(--accent);
+    border: 1px solid #1e3d1e;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-left: auto;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .sidebar-rooms {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .room-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .room-item:hover { background: #1a1a1a; }
+  .room-item.active {
+    border-left-color: var(--accent);
+    background: #0d1f0d;
+  }
+  .room-item .room-name {
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+  }
+  .room-item .room-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .room-item .member-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: var(--muted);
+  }
+
+  /* ── Main panel ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    overflow: hidden;
+  }
+
+  /* ── Panels ── */
+  .panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .panel-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  /* ── Forms ── */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:active { filter: brightness(0.9); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .btn-ghost:hover { background: #0d1f0d; }
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .btn-danger:hover { background: #1f0d0d; }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Right panel: actions ── */
+  .actions-panel {
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .card-body { padding: 14px; }
+
+  /* ── Members list ── */
+  .member-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .member-row:last-child { border-bottom: none; }
+  .avatar {
+    width: 28px; height: 28px;
+    background: #1a2a1a;
+    border: 1px solid #1e3d1e;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .member-info { flex: 1; min-width: 0; }
+  .member-name { font-size: 13px; font-weight: 500; }
+  .member-phone {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── Event log ── */
+  .log-entry {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a1a1a;
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .log-time { color: var(--muted); }
+  .log-ok   { color: var(--accent); }
+  .log-err  { color: var(--danger); }
+  .log-info { color: var(--accent2); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 16px;
+    border-radius: 2px;
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    pointer-events: none;
+    max-width: 300px;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; transform: none; }
+  #toast.err { border-left-color: var(--danger); }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0;
+  }
+
+  /* ── Search bar ── */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px 7px 30px;
+    border-radius: 2px;
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute;
+    left: 9px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .empty {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 24px 0;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .tag-green { background: #0d1f0d; color: var(--accent); border: 1px solid #1e3d1e; }
+  .tag-blue  { background: #0d1020; color: #4da6ff; border: 1px solid #1e2a40; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GROUP<span>/</span>SMS</div>
+  <div class="pill">MVP</div>
+  <div style="margin-left:8px; font-family:var(--mono); font-size:11px; color:var(--muted)">
+    base: <span id="api-base" style="color:var(--text)">{{ request.scheme }}://{{ request.get_host }}</span>
+  </div>
+  <div class="status-dot" title="API connected"></div>
+</header>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-label">Active User</div>
+      <div id="active-user-display" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px;">
+        — none selected —
+      </div>
+      <select id="user-select" style="
+        width:100%;background:var(--bg);border:1px solid var(--border);
+        color:var(--text);font-family:var(--mono);font-size:12px;
+        padding:6px 8px;border-radius:2px;outline:none;
+      ">
+        <option value="">select user...</option>
+      </select>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Rooms</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="room-search" placeholder="search rooms..."/>
+      </div>
+    </div>
+
+    <div class="sidebar-rooms" id="room-list">
+      <div class="empty">no rooms yet</div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <!-- Left: room detail + members -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title" id="panel-room-name">SELECT A ROOM</span>
+        <span class="panel-sub" id="panel-room-number">—</span>
+      </div>
+      <div class="panel-body" id="panel-body">
+        <div class="empty" style="margin-top:60px">
+          Select a room from the sidebar, or create one →
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: actions + log -->
+    <div class="actions-panel">
+
+      <!-- Create User -->
+      <div class="card">
+        <div class="card-header">Create User</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="new-user-name" placeholder="Jane Smith"/>
+          </div>
+          <div class="field">
+            <label>Phone (E.164)</label>
+            <input type="text" id="new-user-phone" placeholder="+15550001234"/>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="createUser()">Create User</button>
+        </div>
+      </div>
+
+      <!-- Create Room -->
+      <div class="card">
+        <div class="card-header">Create Room</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Room Name</label>
+            <input type="text" id="new-room-name" placeholder="Engineering Standup"/>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="createRoom()">Create Room + Provision Number</button>
+        </div>
+      </div>
+
+      <!-- Join / Leave -->
+      <div class="card">
+        <div class="card-header">Room Actions</div>
+        <div class="card-body" style="display:flex;gap:8px;flex-direction:column">
+          <button class="btn btn-ghost" style="width:100%" onclick="joinRoom()">Join Selected Room</button>
+          <button class="btn btn-danger" style="width:100%" onclick="leaveRoom()">Leave Selected Room</button>
+        </div>
+      </div>
+
+      <!-- Event log -->
+      <div class="card" style="flex:1">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Event Log</span>
+          <button class="btn btn-sm" style="background:transparent;color:var(--muted);border:none;cursor:pointer;font-size:10px" onclick="clearLog()">clear</button>
+        </div>
+        <div class="card-body" style="padding:8px 12px">
+          <div id="event-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '{{ request.scheme }}://{{ request.get_host }}/api';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  users:      [],
+  rooms:      [],
+  activeRoom: null,
+  activeUser: null,
+};
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+async function boot() {
+  await Promise.all([loadUsers(), loadRooms()]);
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(JSON.stringify(data));
+  return data;
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    state.users = await api('GET', '/users/');
+    renderUserSelect();
+    log('info', `loaded ${state.users.length} users`);
+  } catch(e) {
+    log('err', 'GET /users/ failed — is Django running?');
+  }
+}
+
+async function loadRooms(q = '') {
+  try {
+    const qs = q ? `?q=${encodeURIComponent(q)}` : '';
+    state.rooms = await api('GET', `/rooms/${qs}`);
+    renderRoomList();
+    log('ok', `loaded ${state.rooms.length} rooms`);
+  } catch(e) {
+    log('err', 'GET /rooms/ failed');
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderUserSelect() {
+  const sel = document.getElementById('user-select');
+  sel.innerHTML = '<option value="">select user...</option>';
+  state.users.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.id;
+    opt.textContent = `${u.name} · ${u.phone_number}`;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => {
+    state.activeUser = state.users.find(u => u.id == sel.value) || null;
+    document.getElementById('active-user-display').textContent =
+      state.activeUser ? `${state.activeUser.name}` : '— none selected —';
+  };
+}
+
+function renderRoomList() {
+  const el = document.getElementById('room-list');
+  if (!state.rooms.length) { el.innerHTML = '<div class="empty">no rooms yet</div>'; return; }
+  el.innerHTML = state.rooms.map(r => `
+    <div class="room-item ${state.activeRoom?.id === r.id ? 'active' : ''}" onclick="selectRoom(${r.id})">
+      <div>
+        <div class="room-name">${esc(r.name)}</div>
+        <div class="room-num">${r.twilio_number || 'provisioning...'}</div>
+      </div>
+      <div class="member-badge">${r.member_count}</div>
+    </div>
+  `).join('');
+}
+
+async function selectRoom(id) {
+  state.activeRoom = state.rooms.find(r => r.id === id);
+  renderRoomList();
+  document.getElementById('panel-room-name').textContent = state.activeRoom.name.toUpperCase();
+  document.getElementById('panel-room-number').textContent = state.activeRoom.twilio_number || '—';
+
+  try {
+    const detail = await api('GET', `/rooms/${id}/`);
+    renderRoomDetail(detail);
+  } catch(e) {
+    log('err', `GET /rooms/${id}/ failed`);
+  }
+}
+
+function renderRoomDetail({ room, members }) {
+  const el = document.getElementById('panel-body');
+  el.innerHTML = `
+    <div style="margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="tag tag-green">${members.length} member${members.length !== 1 ? 's' : ''}</span>
+        ${room.twilio_number ? `<span class="tag tag-blue">${esc(room.twilio_number)}</span>` : ''}
+      </div>
+    </div>
+    <div class="section-label" style="margin-bottom:12px">Members</div>
+    ${members.length === 0
+      ? '<div class="empty">no members yet — join this room</div>'
+      : members.map(m => `
+        <div class="member-row">
+          <div class="avatar">${esc(m.user_name[0])}</div>
+          <div class="member-info">
+            <div class="member-name">${esc(m.user_name)}</div>
+            <div class="member-phone">${esc(m.phone_number)}</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">
+            ${new Date(m.joined_at).toLocaleDateString()}
+          </div>
+        </div>
+      `).join('')
+    }
+  `;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+async function createUser() {
+  const name  = document.getElementById('new-user-name').value.trim();
+  const phone = document.getElementById('new-user-phone').value.trim();
+  if (!name || !phone) return toast('Name and phone required', true);
+  try {
+    const u = await api('POST', '/users/', { name, phone_number: phone });
+    log('ok', `created user ${u.name} (id=${u.id})`);
+    toast(`User "${u.name}" created`);
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-phone').value = '';
+    await loadUsers();
+  } catch(e) {
+    log('err', `create user failed: ${e.message}`);
+    toast('Create user failed', true);
+  }
+}
+
+async function createRoom() {
+  const name = document.getElementById('new-room-name').value.trim();
+  if (!name) return toast('Room name required', true);
+  try {
+    const r = await api('POST', '/rooms/', { name });
+    log('ok', `created room "${r.name}" → ${r.twilio_number}`);
+    toast(`Room "${r.name}" created · ${r.twilio_number}`);
+    document.getElementById('new-room-name').value = '';
+    await loadRooms();
+  } catch(e) {
+    log('err', `create room failed: ${e.message}`);
+    toast('Create room failed', true);
+  }
+}
+
+async function joinRoom() {
+  if (!state.activeUser) return toast('Select a user first', true);
+  if (!state.activeRoom) return toast('Select a room first', true);
+  try {
+    await api('POST', `/rooms/${state.activeRoom.id}/join/`, { user_id: state.activeUser.id });
+    log('ok', `${state.activeUser.name} joined "${state.activeRoom.name}" · welcome SMS sent`);
+    toast(`Joined "${state.activeRoom.name}" — welcome SMS sent`);
+    await selectRoom(state.activeRoom.id);
+    await loadRooms();
+  } catch(e) {
+    log('err', `join failed: ${e.message}`);
+    toast('Join failed', true);
+  }
+}
+
+async function leaveRoom() {
+  if (!state.activeUser) return toast('Select a user first', true);
+  if (!state.activeRoom) return toast('Select a room first', true);
+  try {
+    await api('DELETE', `/rooms/${state.activeRoom.id}/leave/`, { user_id: state.activeUser.id });
+    log('ok', `${state.activeUser.name} left "${state.activeRoom.name}"`);
+    toast(`Left "${state.activeRoom.name}"`);
+    await selectRoom(state.activeRoom.id);
+    await loadRooms();
+  } catch(e) {
+    log('err', `leave failed: ${e.message}`);
+    toast('Leave failed', true);
+  }
+}
+
+// ── Event log ─────────────────────────────────────────────────────────────────
+function log(type, msg) {
+  const el  = document.getElementById('event-log');
+  const now = new Date().toLocaleTimeString('en', { hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="log-time">${now}</span><span class="log-${type}">${esc(msg)}</span>`;
+  el.prepend(div);
+}
+function clearLog() { document.getElementById('event-log').innerHTML = ''; }
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, err = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+let searchTimer;
+document.getElementById('room-search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadRooms(e.target.value), 300);
+});
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+boot();
+</script>
+</body>
+</html>
