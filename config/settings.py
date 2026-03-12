@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
 DEBUG      = os.environ.get("DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1",).split(",")
-ALLOWED_HOSTS += [".up.railway.app"] # so that we can host using railway
+ALLOWED_HOSTS += [".railway.app"] # so that we can host using railway
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
