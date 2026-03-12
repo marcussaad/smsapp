@@ -95,3 +95,7 @@ groupsms/
 - **Idempotent webhook** — `ProcessedSMSEvent` table uses Twilio's `MessageSid` as a unique key; duplicate webhook deliveries are safely ignored via atomic INSERT + IntegrityError catch
 - **Stub SMS client** — `StubSMSClient` used when `DEBUG=true`; no real Twilio calls during local dev or tests
 - **Failed events are replayable** — broadcast failures mark the event `status=failed` rather than returning non-2xx (which would cause Twilio retry floods); a Celery beat job can reprocess them
+
+
+
+## How this project was built
