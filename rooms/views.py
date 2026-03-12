@@ -64,7 +64,7 @@ class JoinRoomView(APIView):
             return Response({"error": "user_id required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(pk=user_id)
+            user = User.objects.filter(pk=user_id).prefetch_related("memberships").first()
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -74,7 +74,7 @@ class JoinRoomView(APIView):
             return Response({"error": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Enforce max rooms per user
-        current_room_count = user.memberships.count()
+        current_room_count = len(user.memberships.all())
         if current_room_count >= settings.MAX_ROOMS_PER_USER:
             return Response(
                 {"error": f"Users may not join more than {settings.MAX_ROOMS_PER_USER} rooms."},

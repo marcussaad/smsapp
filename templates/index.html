@@ -390,7 +390,7 @@
   <div class="logo">GROUP<span>/</span>SMS</div>
   <div class="pill">MVP</div>
   <div style="margin-left:8px; font-family:var(--mono); font-size:11px; color:var(--muted)">
-    base: <span id="api-base" style="color:var(--text)">{{ request.scheme }}://{{ request.get_host }}</span>
+    base: <span id="api-base" style="color:var(--text)">{{ request.get_host }}</span>
   </div>
   <div class="status-dot" title="API connected"></div>
 </header>
@@ -554,7 +554,7 @@ function renderUserSelect() {
   state.users.forEach(u => {
     const opt = document.createElement('option');
     opt.value = u.id;
-    opt.textContent = `${u.name} · ${u.phone_number}`;
+    opt.textContent = `${u.name} · ${fmt(u.phone_number)}`;
     sel.appendChild(opt);
   });
   sel.onchange = () => {
@@ -571,7 +571,7 @@ function renderRoomList() {
     <div class="room-item ${state.activeRoom?.id === r.id ? 'active' : ''}" onclick="selectRoom(${r.id})">
       <div>
         <div class="room-name">${esc(r.name)}</div>
-        <div class="room-num">${r.twilio_number || 'provisioning...'}</div>
+        <div class="room-num">${fmt(r.twilio_number) || 'provisioning...'}</div>
       </div>
       <div class="member-badge">${r.member_count}</div>
     </div>
@@ -582,7 +582,7 @@ async function selectRoom(id) {
   state.activeRoom = state.rooms.find(r => r.id === id);
   renderRoomList();
   document.getElementById('panel-room-name').textContent = state.activeRoom.name.toUpperCase();
-  document.getElementById('panel-room-number').textContent = state.activeRoom.twilio_number || '—';
+  document.getElementById('panel-room-number').textContent = fmt(state.activeRoom.twilio_number) || '—';
 
   try {
     const detail = await api('GET', `/rooms/${id}/`);
@@ -598,7 +598,7 @@ function renderRoomDetail({ room, members }) {
     <div style="margin-bottom:18px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <span class="tag tag-green">${members.length} member${members.length !== 1 ? 's' : ''}</span>
-        ${room.twilio_number ? `<span class="tag tag-blue">${esc(room.twilio_number)}</span>` : ''}
+        ${room.twilio_number ? `<span class="tag tag-blue">${esc(fmt(room.twilio_number))}</span>` : ''}
       </div>
     </div>
     <div class="section-label" style="margin-bottom:12px">Members</div>
@@ -609,7 +609,7 @@ function renderRoomDetail({ room, members }) {
           <div class="avatar">${esc(m.user_name[0])}</div>
           <div class="member-info">
             <div class="member-name">${esc(m.user_name)}</div>
-            <div class="member-phone">${esc(m.phone_number)}</div>
+            <div class="member-phone">${esc(fmt(m.phone_number))}</div>
           </div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">
             ${new Date(m.joined_at).toLocaleDateString()}
@@ -643,8 +643,8 @@ async function createRoom() {
   if (!name) return toast('Room name required', true);
   try {
     const r = await api('POST', '/rooms/', { name });
-    log('ok', `created room "${r.name}" → ${r.twilio_number}`);
-    toast(`Room "${r.name}" created · ${r.twilio_number}`);
+    log('ok', `created room "${r.name}" → ${fmt(r.twilio_number)}`);
+    toast(`Room "${r.name}" created · ${fmt(r.twilio_number)}`);
     document.getElementById('new-room-name').value = '';
     await loadRooms();
   } catch(e) {
@@ -714,6 +714,19 @@ document.getElementById('room-search').addEventListener('input', e => {
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Format E.164 numbers → +1 (650) 229-9369  (falls back gracefully for non-US)
+function fmt(phone) {
+  if (!phone) return '—';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11 && digits[0] === '1') {
+    const [, area, prefix, line] = digits.match(/1(\d{3})(\d{3})(\d{4})/);
+    return `+1 (${area}) ${prefix}-${line}`;
+  }
+  const match = phone.match(/^(\+\d{1,3})(\d+)/);
+  if (match) return `${match[1]} ${match[2].replace(/(\d{3})(?=\d)/g, '$1 ')}`;
+  return phone;
 }
 
 boot();
